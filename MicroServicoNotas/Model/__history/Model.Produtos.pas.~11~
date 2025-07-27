@@ -1,0 +1,157 @@
+unit Model.Notas;
+
+interface
+
+uses FireDAC.Comp.Client, Data.DB, System.SysUtils, Model.Connection, System.Json, Horse.Jhonson;
+
+type TProdutos = class
+  private
+    FID_NOTA ,
+    FNUMERO : Integer;
+    FSTATUS : String;
+    FDATA_EMISSAO : Date;
+
+  public
+    constructor Create;
+    destructor Destroy;
+    property ID_NOTA : Integer read FID_NOTA write FID_NOTA;
+    property NUMERO : Integer read FNUMERO write FNUMERO;
+    property STATUS : String read FSTATUS write FSTATUS;
+    property DATA_EMISSAO : String read FDATA_EMISSAO write FCATEGORIA;
+    property NOME : String read FNOME write FNOME;
+    property PRECO_UNITARIO : Double read FPRECO_UNITARIO write FPRECO_UNITARIO;
+
+    function RetornaProduto(order_by: string; out erro: String): TFDQuery;
+    function CadastraProduto(out erro : String): Boolean;
+    function DeletaProduto(out erro : String): Boolean;
+end;
+
+implementation
+
+{ TProdutos }
+
+constructor TProdutos.Create;
+begin
+  Model.Connection.Connect;
+end;
+
+destructor TProdutos.Destroy;
+begin
+  Model.Connection.Disconect;
+end;
+
+function TProdutos.CadastraProduto(out erro: String): Boolean;
+var
+  qry : TFDQuery;
+begin
+
+  try
+    qry := TFDQuery.Create(nil);
+    qry.Connection := Model.Connection.FConnection;
+
+    with qry do
+      begin
+        Active := false;
+
+        SQL.Add('UPDATE OR INSERT INTO PRODUTO(ID_PRODUTO, NOME, PRECO_UNITARIO, SALDO_ESTOQUE,DESCRICAO,CATEGORIA)');
+        SQL.Add('VALUES(:ID_PRODUTO, :NOME, :PRECO_UNITARIO, :SALDO_ESTOQUE, :DESCRICAO, :CATEGORIA)');
+
+        ParamByName('ID_PRODUTO').Value := ID_PRODUTO;
+        ParamByName('NOME').Value := NOME;
+        ParamByName('PRECO_UNITARIO').Value := PRECO_UNITARIO;
+        ParamByName('SALDO_ESTOQUE').Value := SALDO_ESTOQUE;
+        ParamByName('DESCRICAO').Value := DESCRICAO;
+        ParamByName('CATEGORIA').Value := CATEGORIA;
+
+        ExecSQL;
+
+        // Busca ID inserido...
+//        Params.Clear;
+//        SQL.Clear;
+//        SQL.Add('SELECT MAX(ID_PRODUTO) AS ID_PRODUTO FROM PRODUTO');
+//        active := true;
+//
+//        ID_PRODUTO := FieldByName('ID_PRODUTO').AsInteger;
+      end;
+
+    qry.Free;
+    erro := '';
+    result := true;
+
+  except on ex:exception do
+    begin
+      erro := 'Erro ao cadastrar produto: ' + ex.Message;
+      Result := false;
+    end;
+  end;
+end;
+
+
+function TProdutos.DeletaProduto(out erro: String): Boolean;
+var
+  qry : TFDQuery;
+begin
+  try
+    qry := TFDQuery.Create(nil);
+    qry.Connection := Model.Connection.FConnection; // Seta conexao la do model
+
+    with qry do
+      begin
+        Active := False;
+        SQL.Add('DELETE FROM PRODUTO WHERE ID_PRODUTO = :ID_PRODUTO');
+        ParamByName('ID_PRODUTO').Value := ID_PRODUTO;
+        ExecSQL;
+
+      end;
+    erro := '';
+    Result := True; //Nao retorna a query pois vai apenas fazer o delete
+
+
+  except on Ex:Exception do
+    begin
+      erro := 'Ocorreu um erro ao deletar o produto. '+ Ex.Message;
+      Result := False;
+    end;
+
+  end;
+end;
+
+
+function TProdutos.RetornaProduto(order_by: string; out erro: String): TFDQuery;
+var
+  qry : TFDQuery;
+begin
+  try
+    qry := TFDQuery.Create(nil);
+    qry.Connection := Model.Connection.FConnection; // Seta conexao la do model
+
+    with qry do
+      begin
+        Active := False;
+        SQL.Add('SELECT * FROM PRODUTO ');
+
+        if ID_PRODUTO > 0 then
+          begin
+            SQL.Add('WHERE ID_PRODUTO = :ID_PRODUTO');
+            ParamByName('ID_PRODUTO').Value := ID_PRODUTO;
+          end;
+        Active := True;
+
+      end;
+    erro := '';
+    Result := qry;
+
+
+  except on Ex:Exception do
+    begin
+      erro := 'Ocorreu um erro ao consultar os produtos. '+ Ex.Message;
+    end;
+
+  end;
+end;
+
+
+
+
+
+end.

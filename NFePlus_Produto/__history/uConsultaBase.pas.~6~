@@ -1,0 +1,34 @@
+unit uConsultaBase;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ExtCtrls, Data.DB, Vcl.Buttons,
+  Vcl.Grids, Vcl.DBGrids, Vcl.ComCtrls;
+
+type
+  TufrmConsulta = class(TForm)
+    pnToolBar: TPanel;
+    pnConsulta_Pai: TPanel;
+    sbBarraStatus: TStatusBar;
+    pnConsulta_Filho: TPanel;
+    grGrid: TDBGrid;
+    sbProximo: TSpeedButton;
+    sbAnterior: TSpeedButton;
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+  end;
+
+var
+  ufrmConsulta: TufrmConsulta;
+
+implementation
+
+{$R *.dfm}
+
+
+
+end.

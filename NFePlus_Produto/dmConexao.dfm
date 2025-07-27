@@ -1,0 +1,15 @@
+object dmDados: TdmDados
+  OldCreateOrder = False
+  Height = 183
+  Width = 349
+  object NetHTTPClient1: TNetHTTPClient
+    Asynchronous = False
+    ConnectionTimeout = 60000
+    ResponseTimeout = 60000
+    AllowCookies = True
+    HandleRedirects = True
+    UserAgent = 'Embarcadero URI Client/1.0'
+    Left = 56
+    Top = 24
+  end
+end

@@ -1,0 +1,15 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<Transactions>
+    <Transaction>2025/07/03 16:14:09.000.992,=C:\Users\progweb01\Documents\Embarcadero\Studio\Projects\Unit1.pas</Transaction>
+    <Transaction>2025/07/23 08:38:22.000.609,=C:\Users\progweb01\Documents\Embarcadero\Studio\Projects\Unit1.pas</Transaction>
+    <Transaction>2025/07/23 08:38:55.000.077,C:\Users\progweb01\Documents\Embarcadero\Studio\Projects\Unit1.pas=C:\Users\progweb01\Pictures\Projeto\NFePlus_Nota\uCadastroNota.pas</Transaction>
+    <Transaction>2025/07/23 08:38:55.000.077,C:\Users\progweb01\Documents\Embarcadero\Studio\Projects\Unit1.dfm=C:\Users\progweb01\Pictures\Projeto\NFePlus_Nota\uCadastroNota.dfm</Transaction>
+    <Transaction>2025/07/23 08:39:18.000.535,C:\Users\progweb01\Documents\Embarcadero\Studio\Projects\Project1.dproj=C:\Users\progweb01\Pictures\Projeto\NFePlus_Nota\Faturamento.dproj</Transaction>
+    <Transaction>2025/07/24 14:11:11.000.291,=C:\Users\progweb01\Pictures\Projeto\NFePlus_Nota\Unit1.pas</Transaction>
+    <Transaction>2025/07/24 14:11:47.000.202,C:\Users\progweb01\Pictures\Projeto\NFePlus_Nota\dmConexao.pas=C:\Users\progweb01\Pictures\Projeto\NFePlus_Nota\Unit1.pas</Transaction>
+    <Transaction>2025/07/24 14:11:47.000.202,C:\Users\progweb01\Pictures\Projeto\NFePlus_Nota\dmConexao.dfm=C:\Users\progweb01\Pictures\Projeto\NFePlus_Nota\Unit1.dfm</Transaction>
+    <Transaction>2025/07/24 14:13:20.000.153,=C:\Users\progweb01\Pictures\Projeto\NFePlus_Nota\uConsultaBase.pas</Transaction>
+    <Transaction>2025/07/26 21:14:30.611,C:\Users\progweb01\Pictures\Projeto\NFePlus_Nota\uConsultaBase.pas=</Transaction>
+  </Transactions>
+</BorlandProject>

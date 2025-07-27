@@ -1,0 +1,190 @@
+unit Controller.Nota;
+
+interface
+
+uses Horse, System.Json, Horse.Jhonson, System.SysUtils, Model.Notas,
+     FireDAC.Comp.Client, Data.DB, DataSet.Serialize, System.DateUtils;
+
+procedure Registry;
+
+implementation
+
+procedure pRetornaNota(Req: THorseRequest; Res: THorseResponse);
+var
+  wNota: TNota;
+  wQry: TFDQuery;
+  wErro: String;
+  wArrayNotas: TJSONArray;
+begin
+  try
+    wNota := TNota.Create;
+  except
+    on E: Exception do
+    begin
+      Res.Status(500).Send('Erro ao conectar com o banco: ' + E.Message);
+      Exit;
+    end;
+  end;
+
+  try
+    wQry := wNota.fRetornaNota(wErro);
+    wArrayNotas := wQry.ToJSONArray();
+    Res.Send<TJSONArray>(wArrayNotas);
+  finally
+    FreeAndNil(wQry);
+    FreeAndNil(wNota)
+  end;
+end;
+
+procedure pRetornaNotaID(Req: THorseRequest; Res: THorseResponse);
+var
+  wNota: TNota;
+  wObjNota: TJSONObject;
+  wQry: TFDQuery;
+  wErro: String;
+begin
+  try
+    wNota := TNota.Create;
+    wNota.ID_NOTA := Req.Params['id'].ToInteger;
+  except
+    on E: Exception do
+    begin
+      Res.Status(500).Send('Erro ao conectar com o banco: ' + E.Message);
+      Exit;
+    end;
+  end;
+
+  try
+    wQry := wNota.fRetornaNota(wErro);
+    if wQry.RecordCount > 0 then
+    begin
+      wObjNota := wQry.ToJSONObject;
+      Res.Send<TJSONObject>(wObjNota);
+    end
+    else
+      Res.Send('Nota fiscal nao encontrada.').Status(404);
+  finally
+    FreeAndNil(wQry);
+    FreeAndNil(wNota);
+  end;
+end;
+
+procedure pCadastraNota(Req: THorseRequest; Res: THorseResponse);
+var
+  wNota: TNota;
+  wObjNota: TJSONObject;
+  wProdutosArray: TJSONArray;
+  wProdutoItem: TJSONObject;
+  wQryProduto: TFDQuery;
+  wErro: String;
+  wBody: TJsonValue;
+  wI : Integer;
+begin
+  try
+    wNota := TNota.Create;
+  except
+    on E: Exception do
+    begin
+      Res.Status(500).Send('Erro ao conectar com o banco: ' + E.Message);
+      Exit;
+    end;
+  end;
+
+  try
+    try
+      wBody := TJSONObject.ParseJSONValue(TEncoding.UTF8.GetBytes(Req.Body), 0) as TJsonValue;
+
+      wNota.ID_NOTA := wBody.GetValue<Integer>('idNota', 0);
+      wNota.NUMERO := wBody.GetValue<Integer>('numero', 0);
+      wNota.STATUS := wBody.GetValue<String>('status', '');
+      wNota.DATA_EMISSAO := StrToDateDef(wBody.GetValue<string>('dataEmissao', ''), 0);
+
+      if wNota.fCadastraNota(wErro) then    // se cadastrou a nota, vai verificar se tem produtos, e ai vai cadastrar os que estao no json
+        begin
+          if wBody.TryGetValue<TJSONArray>('produtos', wProdutosArray) then
+            begin
+              if not wNota.fCadastraItemsNota(wProdutosArray, wErro) then
+                raise Exception.Create(wErro);
+
+            end;
+        end
+      else
+        Res.Status(409).Send(LMsgErro);
+
+      FreeAndNil(wBody);
+
+    except on ex: Exception do
+      begin
+        Res.Send(ex.Message).Status(400);
+        Exit;
+      end;
+    end;
+  finally
+    FreeAndNil(wNota);
+  end;
+end;
+
+procedure pDeletaNota(Req: THorseRequest; Res: THorseResponse);
+var
+  wNota: TNota;
+  wErro: String;
+begin
+  try
+    wNota := TNota.Create;
+    wNota.ID_NOTA := Req.Params['id'].ToInteger;
+  except
+    on E: Exception do
+    begin
+      Res.Status(500).Send('Erro ao conectar com o banco: ' + E.Message);
+      Exit;
+    end;
+  end;
+
+  try
+
+    if not wNota.fDeletaNota(wErro) then
+      raise Exception.Create(wErro);
+
+  except on Ex: Exception do
+    begin
+      Res.Send(Ex.Message).Status(400);
+      Exit;
+    end;
+  end;
+
+  FreeAndNil(wNota);
+end;
+
+procedure pImprimirNota(Req: THorseRequest; Res: THorseResponse);
+var
+  wNota: TNota;
+  wErro: String;
+  wIdNota: Integer;
+begin
+  try
+    wNota := TNota.Create;
+    wNota.ID_NOTA := Req.Params['id'].ToInteger;
+    if wNota.fImprimirNota(wErro) then
+      Res.Send('Status atualizado.').Status(200)
+    else
+      Res.Send(wErro).Status(400);  // quando uma nota nao tem produto ou a quantidade maior que o estoque
+
+  except on Ex: Exception do
+    begin
+      Res.Send(Ex.Message).Status(400);
+      Exit;
+    end;
+  end;
+end;
+
+procedure Registry;
+begin
+  THorse.Get('/notas', pRetornaNota);
+  THorse.Get('/notas/:id', pRetornaNotaID);
+  THorse.Post('/notas', pCadastraNota);
+  THorse.Delete('/notas/:id', pDeletaNota);
+  THorse.Post('/notas/:id/imprimir', pImprimirNota);
+end;
+
+end.
+

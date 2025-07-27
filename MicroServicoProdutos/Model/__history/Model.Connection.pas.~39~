@@ -1,0 +1,73 @@
+unit Model.Connection;
+
+interface
+
+uses
+  FireDAC.Comp.Client, FireDAC.Stan.Intf, FireDAC.Stan.Option,
+  FireDAC.Stan.Pool, FireDAC.Phys.Intf, FireDAC.Phys.FB, FireDAC.Phys.FBDef,
+  FireDAC.UI.Intf, FireDAC.VCLUI.Wait, System.IniFiles, System.SysUtils,
+  System.Classes;
+
+var
+  FConexao: TFDConnection;
+
+function fConectar: TFDConnection;
+procedure pDesconectar;
+
+implementation
+
+function fConectar: TFDConnection;
+var
+  wArquivoConfig: string;
+  wIni: TIniFile;
+begin
+  if Assigned(FConexao) and FConexao.Connected then
+    Exit(FConexao);
+
+  FConexao := TFDConnection.Create(nil);
+  wArquivoConfig := IncludeTrailingPathDelimiter(GetCurrentDir) + 'ServerHorse.ini';
+
+  if not FileExists(wArquivoConfig) then
+    raise Exception.Create('Arquivo ServerHorse.ini não encontrado em: ' + wArquivoConfig);
+
+  wIni := TIniFile.Create(wArquivoConfig);
+  try
+    // Configurar a conexão
+    FConexao.Params.Clear;
+    FConexao.Params.Values['DriverID']   := wIni.ReadString('Banco de Dados', 'DriverID', 'FB');
+    FConexao.Params.Values['Database']   := wIni.ReadString('Banco de Dados', 'Database', '');
+    FConexao.Params.Values['User_name']  := wIni.ReadString('Banco de Dados', 'User_name', 'sysdba');
+    FConexao.Params.Values['Password']   := wIni.ReadString('Banco de Dados', 'Password', 'masterkey');
+    FConexao.Params.Values['Port']       := wIni.ReadString('Banco de Dados', 'Port', '3050');
+    FConexao.Params.Values['Server']     := wIni.ReadString('Banco de Dados', 'Server', 'localhost');
+
+    // Ativar conexão
+    FConexao.LoginPrompt := False;
+    FConexao.Connected := True;
+
+    Result := FConexao;
+
+  finally
+    wIni.Free;
+  end;
+end;
+
+procedure pDesconectar;
+begin
+  if Assigned(FConexao) then
+  begin
+    if FConexao.Connected then
+    begin
+      // aqui e estiver fazendo algo vai desfazer antes de fechar
+      if FConexao.InTransaction then
+        FConexao.Rollback;
+
+      FConexao.Connected := False;
+    end;
+    FConexao.Free;
+    FConexao := nil;
+  end;
+end;
+
+end.
+

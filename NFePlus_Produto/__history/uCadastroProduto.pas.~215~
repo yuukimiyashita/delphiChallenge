@@ -1,0 +1,186 @@
+unit uCadastroProduto;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages,System.JSON, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.Buttons, Vcl.ExtCtrls, Vcl.ComCtrls, System.Net.HttpClient, System.NetEncoding,
+  Vcl.StdCtrls, Vcl.Samples.Spin, uConsultaBase, FireDAC.Comp.Client, FireDAC.Stan.Param;
+
+type
+  TfrCadProdutos = class(TForm)
+    pToolBar: TPanel;
+    sbOk: TSpeedButton;
+    sbExclui: TSpeedButton;
+    pnCadastro_Pai: TPanel;
+    sbBarraStatus: TStatusBar;
+    pnCadastro_Filho: TPanel;
+    lbCodigo: TLabel;
+    edCodigoProduto: TEdit;
+    edNomeProduto: TEdit;
+    lbDescricao: TLabel;
+    edDescricaoProduto: TEdit;
+    lbPreco: TLabel;
+    edPrecoProduto: TEdit;
+    lbSaldo: TLabel;
+    edSaldoProduto: TEdit;
+    lbCategoria: TLabel;
+    cbCategoriaProduto: TComboBox;
+    procedure FormShow(Sender: TObject);
+    procedure sbExcluiClick(Sender: TObject);
+    procedure edCodigoProdutoExit(Sender: TObject);
+    procedure sbOkClick(Sender: TObject);
+    procedure edPrecoProdutoKeyPress(Sender: TObject; var Key: Char);
+    procedure edSaldoProdutoKeyPress(Sender: TObject; var Key: Char);
+  private
+    procedure pLimpaCampos;
+    function fApenasNumerosFloat(wKey: Char):String;
+  public
+    { Public declarations }
+  end;
+
+var
+  frCadProdutos: TfrCadProdutos;
+
+implementation
+
+
+uses dmConexao;
+{$R *.dfm}
+
+procedure TfrCadProdutos.edCodigoProdutoExit(Sender: TObject);
+var
+  wQry : TFDQuery;
+  wProdutoID : String;
+  wProdutoJSON : TJSONObject;
+  wRespostaJSON : TJSONObject;
+  wResposta : IHTTPResponse ;
+begin
+  wProdutoID := edCodigoProduto.Text;
+
+  if wProdutoID = '' then
+    begin
+      pLimpaCampos;
+      edCodigoProduto.SetFocus;
+      Exit;
+    end;
+
+  if StrToInt(wProdutoID) <= 0 then //Nao usei TryStrToInt pois o TEDIT deixa inserir apenas numberos.
+    begin
+      ShowMessage('Insira um codigo valido');
+      pLimpaCampos;
+      Exit;
+    end;
+
+  wResposta := dmDados.fBuscaProdutoID(wProdutoID);
+  if Resposta.StatusCode = 200 then
+    begin
+      ProdutoJSON := TJSONObject.ParseJSONValue(Resposta.ContentAsString) as TJSONObject;
+      try
+        edNomeProduto.Text        := ProdutoJSON.GetValue<String>('nome');
+        edDescricaoProduto.Text   := ProdutoJSON.GetValue<String>('descricao');
+        edPrecoProduto.Text       := FloatToStr(ProdutoJSON.GetValue<Double>('precoUnitario'));
+        edSaldoProduto.Text       := IntToStr(ProdutoJSON.GetValue<Integer>('saldoEstoque'));
+        cbCategoriaProduto.Text   := ProdutoJSON.GetValue<String>('categoria');
+      finally
+        ProdutoJSON.Free;
+      end;
+
+    end
+  else
+    pLimpaCampos;
+
+
+end;
+
+
+
+procedure TfrCadProdutos.edPrecoProdutoKeyPress(Sender: TObject; var Key: Char);
+begin
+  if not (Key in ['0'..'9',',','.',#8]) then
+    Key := #0
+end;
+
+
+
+procedure TfrCadProdutos.edSaldoProdutoKeyPress(Sender: TObject; var Key: Char);
+begin
+  if not (Key in ['0'..'9',',','.',#8]) then
+    Key := #0
+end;
+
+function TfrCadProdutos.fApenasNumerosFloat(wKey: Char): String;
+begin
+//
+end;
+
+procedure TfrCadProdutos.FormShow(Sender: TObject);
+begin
+  pLimpaCampos;
+end;
+
+procedure TfrCadProdutos.pLimpaCampos;
+begin
+  //edCodigoProduto.Text := '';
+  edNomeProduto.Text := '';
+  edPrecoProduto.Text := '';
+  edSaldoProduto.Text := '';
+  edDescricaoProduto.Text := '';
+  cbCategoriaProduto.ItemIndex := 0;
+  //edCodigoProduto.SetFocus;
+end;
+
+procedure TfrCadProdutos.sbOkClick(Sender: TObject);
+ var
+  ProdutoJSON: TJSONObject;
+  wValorAux : String;
+begin
+  ProdutoJSON := TJSONObject.Create;
+  try
+    wValorAux := StringReplace(edPrecoProduto.Text, '.', '', [rfReplaceAll]);
+    wValorAux := StringReplace(wValorAux, ',', '', [rfReplaceAll]);
+
+    ProdutoJSON.AddPair('idProduto', TJSONNumber.Create(StrToIntDef(edCodigoProduto.Text, 0)));
+    ProdutoJSON.AddPair('nome', edNomeProduto.Text);
+    ProdutoJSON.AddPair('descricao', edDescricaoProduto.Text);
+    ProdutoJSON.AddPair('precoUnitario', TJSONNumber.Create(StrToFloatDef(wValorAux, 0)));
+    ProdutoJSON.AddPair('saldoEstoque', TJSONNumber.Create(StrToIntDef(edSaldoProduto.Text, 0)));
+    ProdutoJSON.AddPair('categoria', cbCategoriaProduto.Text);
+
+
+    if dmDados.CadastraProdutos(ProdutoJSON) then
+      begin
+        ShowMessage('Produto cadastrado com sucesso!');
+        pLimpaCampos;
+        edCodigoProduto.SetFocus;
+      end
+    else
+      ShowMessage('Erro ao cadastrar produto.');
+
+  except
+    on E: Exception do
+      ShowMessage('Erro: ' + E.Message);
+  end;
+  ProdutoJSON.Free;
+end;
+
+procedure TfrCadProdutos.sbExcluiClick(Sender: TObject);
+var
+  ProdutoID : String;
+
+begin
+
+  ProdutoID := edCodigoProduto.Text;
+  if ProdutoID = '' then
+    begin
+      ShowMessage('Informe o codigo do produto.');
+      Exit;
+    end;
+  if dmDados.DeletaProdutos(ProdutoID) then
+    ShowMessage('Produto deletado com sucesso.')
+  else
+    ShowMessage('Erro ao deletar produto.');
+
+  end;
+
+end.

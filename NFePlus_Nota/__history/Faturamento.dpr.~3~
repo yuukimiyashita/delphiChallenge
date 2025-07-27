@@ -1,0 +1,17 @@
+program Faturamento;
+
+uses
+  Vcl.Forms,
+  uCadastroNota in 'uCadastroNota.pas' {ufrmCadastroNota},
+  dmConexao in 'dmConexao.pas' {DataModule1: TDataModule},
+  uConsultaBase in 'uConsultaBase.pas';
+
+{$R *.res}
+
+begin
+  Application.Initialize;
+  Application.MainFormOnTaskbar := True;
+  Application.CreateForm(TufrmCadastroNota, ufrmCadastroNota);
+  Application.CreateForm(TDataModule1, DataModule1);
+  Application.Run;
+end.

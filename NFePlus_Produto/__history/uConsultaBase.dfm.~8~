@@ -1,0 +1,92 @@
+object frmConsulta: TfrmConsulta
+  Left = 0
+  Top = 0
+  Caption = 'Consulta de produtos'
+  ClientHeight = 299
+  ClientWidth = 635
+  Color = clBtnFace
+  Font.Charset = DEFAULT_CHARSET
+  Font.Color = clWindowText
+  Font.Height = -11
+  Font.Name = 'Tahoma'
+  Font.Style = []
+  OldCreateOrder = False
+  PixelsPerInch = 96
+  TextHeight = 13
+  object pnToolBar: TPanel
+    Left = 0
+    Top = 0
+    Width = 635
+    Height = 41
+    Align = alTop
+    TabOrder = 0
+    ExplicitLeft = 136
+    ExplicitTop = 96
+    ExplicitWidth = 185
+    object sbProximo: TSpeedButton
+      Left = 1
+      Top = 1
+      Width = 72
+      Height = 39
+      Align = alLeft
+      Caption = 'Proximo'
+      Flat = True
+    end
+    object sbAnterior: TSpeedButton
+      Left = 73
+      Top = 1
+      Width = 72
+      Height = 39
+      Align = alLeft
+      Caption = 'Anterior'
+      Flat = True
+    end
+  end
+  object pnConsulta_Pai: TPanel
+    Left = 0
+    Top = 41
+    Width = 635
+    Height = 258
+    Align = alClient
+    TabOrder = 1
+    ExplicitLeft = 96
+    ExplicitTop = 104
+    ExplicitWidth = 185
+    ExplicitHeight = 41
+    object sbBarraStatus: TStatusBar
+      Left = 1
+      Top = 238
+      Width = 633
+      Height = 19
+      Panels = <>
+      ExplicitLeft = 280
+      ExplicitTop = 232
+      ExplicitWidth = 0
+    end
+    object pnConsulta_Filho: TPanel
+      Left = 1
+      Top = 1
+      Width = 633
+      Height = 237
+      Align = alClient
+      TabOrder = 1
+      ExplicitLeft = 0
+      ExplicitTop = 6
+      ExplicitWidth = 634
+      ExplicitHeight = 226
+      object grGrid: TDBGrid
+        Left = 1
+        Top = 1
+        Width = 631
+        Height = 235
+        Align = alClient
+        TabOrder = 0
+        TitleFont.Charset = DEFAULT_CHARSET
+        TitleFont.Color = clWindowText
+        TitleFont.Height = -11
+        TitleFont.Name = 'Tahoma'
+        TitleFont.Style = []
+      end
+    end
+  end
+end

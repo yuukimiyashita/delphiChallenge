@@ -1,0 +1,105 @@
+object frmConsulta: TfrmConsulta
+  Left = 0
+  Top = 0
+  Caption = 'Consulta de produtos'
+  ClientHeight = 299
+  ClientWidth = 635
+  Color = clBtnFace
+  Font.Charset = DEFAULT_CHARSET
+  Font.Color = clWindowText
+  Font.Height = -11
+  Font.Name = 'Tahoma'
+  Font.Style = []
+  OldCreateOrder = False
+  PixelsPerInch = 96
+  TextHeight = 13
+  object pnToolBar: TPanel
+    Left = 0
+    Top = 0
+    Width = 635
+    Height = 41
+    Align = alTop
+    TabOrder = 0
+    object sbProximo: TSpeedButton
+      Left = 1
+      Top = 1
+      Width = 72
+      Height = 39
+      Align = alLeft
+      Caption = 'Proximo'
+      Flat = True
+    end
+    object sbAnterior: TSpeedButton
+      Left = 73
+      Top = 1
+      Width = 72
+      Height = 39
+      Align = alLeft
+      Caption = 'Anterior'
+      Flat = True
+    end
+  end
+  object pnConsulta_Pai: TPanel
+    Left = 0
+    Top = 41
+    Width = 635
+    Height = 258
+    Align = alClient
+    TabOrder = 1
+    object sbBarraStatus: TStatusBar
+      Left = 1
+      Top = 238
+      Width = 633
+      Height = 19
+      Panels = <>
+    end
+    object pnConsulta_Filho: TPanel
+      Left = 1
+      Top = 1
+      Width = 633
+      Height = 237
+      Align = alClient
+      TabOrder = 1
+      object grGrid: TDBGrid
+        Left = 1
+        Top = 1
+        Width = 631
+        Height = 235
+        Align = alClient
+        DataSource = DataSource1
+        TabOrder = 0
+        TitleFont.Charset = DEFAULT_CHARSET
+        TitleFont.Color = clWindowText
+        TitleFont.Height = -11
+        TitleFont.Name = 'Tahoma'
+        TitleFont.Style = []
+        Columns = <
+          item
+            Expanded = False
+            FieldName = 'ID_PRODUTO'
+            Visible = True
+          end
+          item
+            Expanded = False
+            FieldName = 'NOME'
+            Visible = True
+          end
+          item
+            Expanded = False
+            FieldName = 'PRECO_UNITARIO'
+            Visible = True
+          end
+          item
+            Expanded = False
+            FieldName = 'SALDO_ESTOQUE'
+            Visible = True
+          end>
+      end
+    end
+  end
+  object DataSource1: TDataSource
+    DataSet = dmDados.qryBanco
+    Left = 344
+    Top = 145
+  end
+end

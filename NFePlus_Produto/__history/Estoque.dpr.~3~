@@ -1,0 +1,16 @@
+program Estoque;
+
+uses
+  Vcl.Forms,
+  uCadastroProduto in 'uCadastroProduto.pas' {ufrmCadProdutos},
+  dmConexao in 'dmConexao.pas' {DataModule1: TDataModule};
+
+{$R *.res}
+
+begin
+  Application.Initialize;
+  Application.MainFormOnTaskbar := True;
+  Application.CreateForm(TufrmCadProdutos, ufrmCadProdutos);
+  Application.CreateForm(TDataModule1, DataModule1);
+  Application.Run;
+end.

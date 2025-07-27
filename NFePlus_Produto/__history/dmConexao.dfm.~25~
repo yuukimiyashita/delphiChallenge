@@ -1,0 +1,73 @@
+object dmDados: TdmDados
+  OldCreateOrder = False
+  Height = 183
+  Width = 349
+  object FDConnection1: TFDConnection
+    Params.Strings = (
+      'Database=C:\Users\progweb01\Pictures\DB\NFEPLUS.FDB'
+      'User_Name=sysdba'
+      'Password=masterkey'
+      'CharacterSet=WIN1252'
+      'Server=Localhost'
+      'Port=3050'
+      'DriverID=FB')
+    Connected = True
+    LoginPrompt = False
+    Left = 40
+    Top = 32
+  end
+  object FDGUIxWaitCursor1: TFDGUIxWaitCursor
+    Provider = 'Forms'
+    Left = 248
+    Top = 40
+  end
+  object FDPhysFBDriverLink1: TFDPhysFBDriverLink
+    VendorLib = 'C:\Users\progweb01\Pictures\Projeto\fbclient.dll'
+    Left = 256
+    Top = 120
+  end
+  object qryBanco: TFDQuery
+    Active = True
+    Connection = FDConnection1
+    SQL.Strings = (
+      'SELECT * FROM PRODUTO')
+    Left = 32
+    Top = 96
+    object qryBancoID_PRODUTO: TIntegerField
+      FieldName = 'ID_PRODUTO'
+      Origin = 'ID_PRODUTO'
+      ProviderFlags = [pfInUpdate, pfInWhere, pfInKey]
+      Required = True
+    end
+    object qryBancoNOME: TStringField
+      FieldName = 'NOME'
+      Origin = 'NOME'
+      Required = True
+      Size = 100
+    end
+    object qryBancoPRECO_UNITARIO: TBCDField
+      FieldName = 'PRECO_UNITARIO'
+      Origin = 'PRECO_UNITARIO'
+      Required = True
+      Precision = 18
+      Size = 2
+    end
+    object qryBancoSALDO_ESTOQUE: TIntegerField
+      FieldName = 'SALDO_ESTOQUE'
+      Origin = 'SALDO_ESTOQUE'
+      Required = True
+    end
+  end
+  object ClientDataSet1: TClientDataSet
+    Aggregates = <>
+    CommandText = 'select * from'
+    Params = <>
+    Left = 144
+    Top = 32
+  end
+  object DataSource1: TDataSource
+    DataSet = ClientDataSet1
+    Left = 128
+    Top = 104
+  end
+end

@@ -1,0 +1,175 @@
+unit Model.Produtos;
+
+interface
+
+uses FireDAC.Comp.Client, Data.DB, System.SysUtils, Model.Connection, System.Json, Horse.Jhonson;
+
+type TProdutos = class
+  private
+    FID_PRODUTO ,
+    FSALDO_ESTOQUE : Integer;
+    FDESCRICAO ,
+    FCATEGORIA ,
+    FNOME      : String;
+    FPRECO_UNITARIO : Double;
+
+  public
+    constructor Create;
+    destructor Destroy;
+    property ID_PRODUTO : Integer read FID_PRODUTO write FID_PRODUTO;
+    property SALDO_ESTOQUE : Integer read FSALDO_ESTOQUE write FSALDO_ESTOQUE;
+    property DESCRICAO : String read FDESCRICAO write FDESCRICAO;
+    property CATEGORIA : String read FCATEGORIA write FCATEGORIA;
+    property NOME : String read FNOME write FNOME;
+    property PRECO_UNITARIO : Double read FPRECO_UNITARIO write FPRECO_UNITARIO;
+
+    function fRetornaProduto(out FErro: String): TFDQuery;
+    function fCadastraProduto(out FErro : String): Boolean;
+    function fDeletaProduto(out FErro : String): Boolean;
+end;
+
+implementation
+
+{ TProdutos }
+
+constructor TProdutos.Create;
+begin
+  Model.Connection.Connect;
+end;
+
+destructor TProdutos.Destroy;
+begin
+  Model.Connection.Disconect;
+end;
+
+function TProdutos.fCadastraProduto(out FErro: String): Boolean;
+var
+  wQry : TFDQuery;
+  wTrans: TFDTransaction;
+begin
+  Result := False;
+  FErro := '';
+  wQry := nil;
+  wTrans := nil;
+
+  try
+    wTrans := TFDTransaction.Create(nil);
+    wTrans.Connection := Model.Connection.FConnection;
+
+
+    wTrans.StartTransaction;
+
+
+    wQry := TFDQuery.Create(nil);
+    wQry.Connection := Model.Connection.FConnection;
+    wQry.Transaction := wTrans;
+
+
+    with wQry do
+      begin
+
+        SQL.Add('UPDATE OR INSERT INTO PRODUTO(ID_PRODUTO, NOME, PRECO_UNITARIO, SALDO_ESTOQUE,DESCRICAO,CATEGORIA)');
+        SQL.Add('VALUES(:ID_PRODUTO, :NOME, :PRECO_UNITARIO, :SALDO_ESTOQUE, :DESCRICAO, :CATEGORIA)');
+
+        ParamByName('ID_PRODUTO').Value := ID_PRODUTO;
+        ParamByName('NOME').Value := NOME;
+        ParamByName('PRECO_UNITARIO').Value := PRECO_UNITARIO;
+        ParamByName('SALDO_ESTOQUE').Value := SALDO_ESTOQUE;
+        ParamByName('DESCRICAO').Value := DESCRICAO;
+        ParamByName('CATEGORIA').Value := CATEGORIA;
+
+        ExecSQL;
+      end;
+
+    wTrans.Commit;
+
+
+    FErro := '';
+    Result := True;
+
+  except on Ex:exception do
+    begin
+      if Assigned(wTrans) and wTrans.Active then
+        wTrans.Rollback;
+      FErro := 'Erro ao cadastrar produto: ' + Ex.Message;
+      Result := false;
+    end;
+  end;
+  FreeAndNil(wQry);
+  FreeAndNil(wTrans);
+end;
+
+
+function TProdutos.fDeletaProduto(out FErro: String): Boolean;
+var
+  wQry : TFDQuery;
+begin
+  Result := False;
+  FErro := '';
+  wQry := TFDQuery.Create(nil);
+
+  try
+    wQry.Connection := Model.Connection.FConexao;
+
+    wQry.Connection.StartTransaction;
+
+    wQry.SQL.Text := 'DELETE FROM PRODUTO WHERE ID_PRODUTO = :ID_PRODUTO';
+    wQry.ParamByName('ID_PRODUTO').Value := ID_PRODUTO;
+    wQry.ExecSQL;
+
+    wQry.Connection.Commit;
+    Result := True;
+
+
+  except on Ex:Exception do
+    begin
+      if wQry.Connection.InTransaction then
+        wQry.Connection.Rollback;
+      FErro := 'Ocorreu um erro ao deletar o produto. '+ Ex.Message;
+      Result := False;
+    end;
+
+  end;
+  FreeAndNil(wQry);
+end;
+
+
+function TProdutos.fRetornaProduto(out FErro: String): TFDQuery;
+var
+  wQry : TFDQuery;
+begin
+  Result := nil;
+
+  try
+    wQry := TFDQuery.Create(nil);
+    wQry.Connection := Model.Connection.FConexao;
+
+    wQry.SQL.Add('SELECT * FROM PRODUTO');
+
+    if ID_PRODUTO > 0 then // se foi passado o id no link, ja faz o where
+      begin
+        wQry.SQL.Add('WHERE ID_PRODUTO = :ID_PRODUTO');
+        wQry.ParamByName('ID_PRODUTO').Value := ID_PRODUTO;
+      end;
+
+    wQry.Open;
+
+    FErro := '';
+    Result := wQry;
+
+
+  except on Ex:Exception do
+    begin
+      FErro := 'Ocorreu um erro ao consultar os produtos. '+ Ex.Message;
+      if Assigned(wQry) then
+        FreeAndNil(wQry);
+    end;
+
+  end;
+end;
+
+
+
+
+
+end.

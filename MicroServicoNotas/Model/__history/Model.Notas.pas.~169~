@@ -1,0 +1,325 @@
+unit Model.Notas;
+
+interface
+
+uses
+  FireDAC.Comp.Client, Data.DB, System.SysUtils, Model.Connection, System.Json, Horse.Jhonson,
+  System.DateUtils;
+
+type
+  TNota = class
+  private
+    FID_NOTA: Integer;
+    FNUMERO: Integer;
+    FSTATUS: String;
+    FDATA_EMISSAO: TDate;
+  public
+    constructor Create;
+    destructor Destroy;
+
+    property ID_NOTA: Integer read FID_NOTA write FID_NOTA;
+    property NUMERO: Integer read FNUMERO write FNUMERO;
+    property STATUS: String read FSTATUS write FSTATUS;
+    property DATA_EMISSAO: TDate read FDATA_EMISSAO write FDATA_EMISSAO;
+
+    function fRetornaNota(out FErro: String): TFDQuery;
+    function fCadastraNota(out FErro: String): Boolean;
+    function fCadastraItemsNota(FProdutos : TJsonArray; out FErro: String): Boolean;
+    function fDeletaNota(out FErro: String): Boolean;
+    function fImprimirNota(out FErro: String): Boolean;
+  end;
+
+implementation
+
+{ TNotaFiscal }
+
+constructor TNota.Create;
+begin
+  Model.Connection.fConectar;
+end;
+
+destructor TNota.Destroy;
+begin
+  Model.Connection.pDesconectar;
+end;
+
+function TNota.fImprimirNota(out FErro: String): Boolean;
+var
+  wQry: TFDQuery;
+  wTrans: TFDTransaction;
+  wIdProduto, wQuantidade, wEstoque: Integer;
+begin
+  Result := False;
+  FErro := '';
+  wQry := nil;
+  wTrans := nil;
+
+  try
+    wTrans := TFDTransaction.Create(nil);
+    wTrans.Connection := Model.Connection.FConnection;
+    wTrans.StartTransaction;
+
+
+    wQry := TFDQuery.Create(nil);
+    wQry.Connection := Model.Connection.FConnection;
+    wQry.Transaction := wTrans;
+
+    //Verifica se existem produtos linkados com a nota, caso nao tenha, sai da funcao.
+    wQry.SQL.Text := 'SELECT COUNT(*) FROM NOTA_PRODUTO WHERE ID_NOTA = :ID_NOTA';
+    wQry.ParamByName('ID_NOTA').Value := ID_NOTA;
+    wQry.Open;
+
+    if wQry.Fields[0].AsInteger = 0 then
+      begin
+        FErro := 'Nao existem produtos relacionados com a nota para fazer a impressao.';
+        Exit;
+      end;
+
+     // usando joins para validar o saldo de estoque para todos os produtos da nota
+     wQry.Close;
+     wQry.SQL.Text := 'SELECT NOTAPROD.ID_PRODUTO, NOTAPROD.QUANTIDADE, PROD.SALDO_ESTOQUE ' + //Seleciona a quantidade que foi inserida, e o estoque desse produto para poder fazer o calculo.
+      'FROM NOTA_PRODUTO NOTAPROD ' +
+      'JOIN PRODUTO PROD ON PROD.ID_PRODUTO = NOTAPROD.ID_PRODUTO ' +
+      'WHERE NOTAPROD.ID_NOTA = :ID_NOTA';
+    wQry.ParamByName('ID_NOTA').AsInteger := ID_NOTA;
+    wQry.Open;
+
+    while not wQry.Eof do
+      begin
+        wIdProduto := wQry.FieldByName('ID_PRODUTO').AsInteger;
+        wQuantidade := wQry.FieldByName('QUANTIDADE').AsInteger;
+        wEstoque := wQry.FieldByName('SALDO_ESTOQUE').AsInteger;
+
+        //Fazendo tratativa caso quantidade pedida do produto seja maior que o estoque
+        //Teoricamente ja existe uma tratativa para bloquear isso na propria tela, mas colocando aqui da mesma forma.
+        if wEstoque < wQuantidade then
+          begin
+            FErro := 'Estoque insuficiente';
+            Exit(False);
+          end;
+
+        wQry.Next;
+      end;
+
+
+    // Aqui vai atualizar o valor do estoque dos produtos que estao ligados com a nota.
+    wQry.Close;
+    wQry.SQL.Text :=
+      'UPDATE PRODUTO SET SALDO_ESTOQUE = SALDO_ESTOQUE - ' +
+      '(SELECT QUANTIDADE FROM NOTA_PRODUTO NOTAPROD ' +
+      ' WHERE NOTAPROD.ID_PRODUTO = PRODUTO.ID_PRODUTO AND NOTAPROD.ID_NOTA = :ID_NOTA) ' +
+      'WHERE ID_PRODUTO IN (SELECT ID_PRODUTO FROM NOTA_PRODUTO WHERE ID_NOTA = :ID_NOTA)';
+    wQry.ParamByName('ID_NOTA').AsInteger := ID_NOTA;
+    wQry.ExecSQL;
+
+    // Aqui so atualiza o status da propria nota para fechada depois de tudo isso.. ufa
+    wQry.SQL.Text := 'UPDATE NOTA_FISCAL SET STATUS = ''Fechada'' WHERE ID_NOTA = :ID_NOTA';
+    wQry.ParamByName('ID_NOTA').AsInteger := ID_NOTA;
+    wQry.ExecSQL;
+
+    wTrans.Commit;
+
+    Result := True;
+    FErro := 'Nota impressa com sucesso e estoque foi atualizado.';
+  except
+    on E: Exception do
+    begin
+      if Assigned(wTrans) and wTrans.Active then
+        wTrans.Rollback;
+
+      FErro := 'Erro ao imprimir nota: ' + E.Message;
+      Result := False;
+    end;
+  end;
+
+  FreeAndNil(wQry);
+end;
+
+
+function TNota.fCadastraItemsNota(FProdutos : TJsonArray; out FErro: String): Boolean;
+var
+  wI: Integer;
+  wQry: TFDQuery;
+  wProdutoItem: TJSONObject;
+  wTrans: TFDTransaction;
+begin
+  Result := False;
+  FErro := '';
+  wQry := nil;
+  wTrans := nil;
+
+  try
+    wTrans := TFDTransaction.Create(nil);
+    wTrans.Connection := Model.Connection.FConnection;
+    wTrans.StartTransaction;
+
+    wQry := TFDQuery.Create(nil);
+    wQry.Connection := Model.Connection.FConnection;
+    wQry.Transaction := wTrans;
+
+    for wI := 0 to FProdutos.Count - 1 do
+      begin
+        wProdutoItem := FProdutos.Items[wI] as TJSONObject;
+        wQry.SQL.Clear;
+                           // precisei alterar isso usando update com matching pois se eu quero apenas
+                           // atualizar a quantidade do item, iria inserir um registro novo por conta da procedure no ibexpert
+        wQry.Connection := Model.Connection.FConnection;
+        wQry.SQL.Text := 'UPDATE OR INSERT INTO NOTA_PRODUTO (ID_NOTA, ID_PRODUTO, QUANTIDADE) ' +
+                         'VALUES (:ID_NOTA, :ID_PRODUTO, :QUANTIDADE) '+
+                         'MATCHING (ID_NOTA, ID_PRODUTO)';
+
+        wQry.ParamByName('ID_NOTA').AsInteger := ID_NOTA;
+        wQry.ParamByName('ID_PRODUTO').AsInteger := wProdutoItem.GetValue<Integer>('idProduto');
+        wQry.ParamByName('QUANTIDADE').AsInteger := wProdutoItem.GetValue<Integer>('quantidade');
+        wQry.ExecSQL;
+
+      end;
+
+    wTrans.Commit;
+    Result := True;
+  except
+    on E: Exception do
+    begin
+      if Assigned(wTrans) and wTrans.Active then
+        wTrans.Rollback;
+      FErro := 'Erro ao inserir item na nota: ' + E.Message;
+      Result := False;
+    end;
+  end;
+  FreeAndNil(wQry);
+  FreeAndNil(wTrans);
+end;
+
+
+
+function TNota.fCadastraNota(out FErro: String): Boolean;
+var
+  wQry: TFDQuery;
+  wTrans: TFDTransaction;
+begin
+  Result := False;
+  FErro := '';
+  wQry := nil;
+  wTrans := nil;
+
+  try
+
+    wTrans := TFDTransaction.Create(nil);
+    wTrans.Connection := Model.Connection.FConnection;
+    wTrans.StartTransaction;
+
+    wQry := TFDQuery.Create(nil);
+    wQry.Connection := Model.Connection.FConnection;
+    wQry.Transaction := wTrans;
+
+    with wQry do
+      begin
+        SQL.Add('UPDATE OR INSERT INTO NOTA_FISCAL (ID_NOTA, NUMERO, STATUS, DATA_EMISSAO)');
+        SQL.Add('VALUES (:ID_NOTA, :NUMERO, :STATUS, :DATA_EMISSAO)');
+
+        ParamByName('ID_NOTA').Value := ID_NOTA;
+        ParamByName('NUMERO').Value := NUMERO;
+        ParamByName('STATUS').Value := STATUS;
+        ParamByName('DATA_EMISSAO').AsDate := DATA_EMISSAO;
+
+        ExecSQL;
+      end;
+
+    wTrans.Commit;
+    Result := True;
+  except
+    on ex: Exception do
+    begin
+      if Assigned(wTrans) and wTrans.Active then
+        wTrans.Rollback;
+      FErro := 'Erro ao cadastrar nota fiscal: ' + ex.Message;
+      Result := False;
+    end;
+  end;
+  FreeAndNil(wQry);
+  FreeAndNil(wTrans);
+end;
+
+function TNota.fDeletaNota(out FErro: String): Boolean;
+var
+  wQry: TFDQuery;
+  wTrans: TFDTransaction;
+begin
+  Result := False;
+  FErro := '';
+  wQry := nil;
+  wTrans := nil;
+
+  try
+    wTrans := TFDTransaction.Create(nil);
+    wTrans.Connection := Model.Connection.FConnection;
+    wTrans.StartTransaction;
+
+    wQry := TFDQuery.Create(nil);
+    wQry.Connection := Model.Connection.FConnection;
+    wQry.Transaction := wTrans;
+
+    // verificando se existem produtos relacionados com a nota na tabela notaproduto
+    wQry.SQL.Text := 'SELECT COUNT(*) FROM NOTA_PRODUTO WHERE ID_NOTA = :ID_NOTA';
+    wQry.ParamByName('ID_NOTA').Value := ID_NOTA;
+    wQry.Open;
+
+    if wQry.Fields[0].AsInteger > 0 then
+      begin
+        wQry.Close;
+        wQry.SQL.Text := 'DELETE FROM NOTA_PRODUTO WHERE ID_NOTA = :ID_NOTA';
+        wQry.ParamByName('ID_NOTA').Value := ID_NOTA;
+        wQry.ExecSQL;
+      end;
+
+    wQry.Close;
+    wQry.SQL.Text := 'DELETE FROM NOTA_FISCAL WHERE ID_NOTA = :ID_NOTA';
+    wQry.ParamByName('ID_NOTA').Value := ID_NOTA;
+    wQry.ExecSQL;
+
+    wTrans.Commit;
+    Result := True;
+  except
+    on Ex: Exception do
+      begin
+        if Assigned(wTrans) and wTrans.Active then
+          wTrans.Rollback;
+        FErro := 'Ocorreu um erro ao deletar a nota fiscal: ' + Ex.Message;
+        Result := False;
+      end;
+  end;
+  FreeAndNil(wQry);
+  FreeAndNil(wTrans);
+end;
+
+function TNota.fRetornaNota(out FErro: String): TFDQuery;
+var
+  wQry: TFDQuery;
+begin
+  try
+    wQry := TFDQuery.Create(nil);
+    wQry.Connection := Model.Connection.FConnection;
+
+    wQry.SQL.Add('SELECT * FROM NOTA_FISCAL');
+
+    if ID_NOTA > 0 then
+      begin
+        wQry.SQL.Add('WHERE ID_NOTA = :ID_NOTA');
+        wQry.ParamByName('ID_NOTA').Value := ID_NOTA;
+      end;
+    wQry.Open;
+
+
+    FErro := '';
+    Result := wQry;
+  except
+    on Ex: Exception do
+    begin
+      FErro := 'Ocorreu um erro ao consultar as notas fiscais: ' + Ex.Message;
+      FreeAndNil(wQry);
+    end;
+  end;
+end;
+
+end.
+

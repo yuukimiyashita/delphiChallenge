@@ -1,0 +1,145 @@
+unit dmConexao;
+
+interface
+
+uses
+  System.SysUtils, System.Classes, System.JSON, System.Net.HttpClient, System.Net.URLClient, System.Net.HttpClientComponent,
+  FireDAC.Stan.Intf, FireDAC.Stan.Option, FireDAC.Stan.Error, FireDAC.UI.Intf,
+  FireDAC.Phys.Intf, FireDAC.Stan.Def, FireDAC.Stan.Pool, FireDAC.Stan.Async,
+  FireDAC.Phys, FireDAC.Phys.FB, FireDAC.Phys.FBDef, FireDAC.VCLUI.Wait,
+  FireDAC.Stan.Param, FireDAC.DatS, FireDAC.DApt.Intf, FireDAC.DApt, Data.DB,
+  Datasnap.DBClient, FireDAC.Comp.DataSet, FireDAC.Comp.Client,
+  FireDAC.Phys.IBBase, FireDAC.Comp.UI, Vcl.Dialogs;
+
+type
+  TdmDados = class(TDataModule)
+    FDConnection1: TFDConnection;
+    FDGUIxWaitCursor1: TFDGUIxWaitCursor;
+    FDPhysFBDriverLink1: TFDPhysFBDriverLink;
+    qryBanco: TFDQuery;
+    qryProdutos: TFDQuery;
+    qryNotaProduto: TFDQuery;
+    NetHTTPClient: TNetHTTPClient;
+  private
+    { Private declarations }
+  public
+    function fBuscaProdutos: TJSONArray;
+    function fBuscaNotaID(const FNotaID : String): IHTTPResponse;
+    function fCadastraNotas(const FNotaJSON: TJSONObject): Boolean;
+    function fDeletaNota(const FNotaID: String):Boolean;
+    function fImprimirNota(const FNotaID : String): Boolean;
+  end;
+
+var
+  dmDados: TdmDados;
+
+implementation
+
+{%CLASSGROUP 'Vcl.Controls.TControl'}
+
+{$R *.dfm}
+
+function TdmDados.fCadastraNotas(const FNotaJSON: TJSONObject): Boolean;
+var
+  wResposta : IHTTPResponse;
+  wJsonStream : TStringStream;
+begin
+  try
+    wJsonStream := TStringStream.Create(FNotaJSON.ToString, TEncoding.UTF8);
+    wResposta := NetHTTPClient.Post('http://localhost:9000/notas', wJsonStream, nil,[TNameValuePair.Create('Content-Type', 'application/json')]);
+
+    if wResposta.StatusCode = 200 then
+      begin
+
+        ShowMessage(wResposta.ContentAsString);
+        Result := True;
+      end
+    else
+      begin
+        ShowMessage('Erro (' + wResposta.StatusCode.ToString + '): ' + wResposta.ContentAsString);
+        Result := False;
+      end;
+  except
+    on E: Exception do
+      raise Exception.Create('Erro ao conectar com o microservico: ' + E.Message);
+  end;
+
+end;
+
+
+function TdmDados.fDeletaNota(const FNotaID: String): Boolean;
+var
+  wResposta : IHTTPResponse;
+begin
+  try
+    wResposta := dmDados.NetHTTPClient.Delete('http://localhost:9000/notas/' + FNotaID);
+    if wResposta.StatusCode = 200 then
+      Result := True
+    else
+      Result := False;
+  except
+    on E: Exception do
+      raise Exception.Create('Erro ao conectar com o microservico: ' + E.Message);
+  end;
+end;
+
+function TdmDados.fImprimirNota(const FNotaID: String): Boolean;
+var
+  wResposta : IHTTPResponse;
+  wBody: TStringStream;
+begin
+  try
+    try           // acho que fez mais sentido usar post aqui mesmo que nao manda nada no body
+      wBody := TStringStream.Create('');
+      wResposta := NetHTTPClient.Post('http://localhost:9000/notas/'+FNotaID+'/imprimir',wBody);
+//      Result := Resposta;
+      if wResposta.StatusCode = 200 then
+        Result := True
+      else
+        Result := False;
+    finally
+      FreeAndNil(wBody);
+    end;
+  except
+    on E: Exception do
+      raise Exception.Create('Erro ao conectar com o microservico: ' + E.Message);
+  end;
+end;
+
+function TdmDados.fBuscaNotaID(const FNotaID: String): IHTTPResponse;
+var
+  wResposta : IHTTPResponse;
+begin
+  Result := nil;
+  try
+    wResposta := NetHTTPClient.Get('http://localhost:9000/notas/' + FNotaID);
+    //Vai retornar de qualquer maneira pois usa o status code la na tela para conferir se o produto esta ou nao cadastrado
+    Result := wResposta
+  except
+    on E: Exception do
+      raise Exception.Create('Erro ao conectar com o microservico: ' + E.Message);
+  end;
+end;
+
+function TdmDados.fBuscaProdutos: TJSONArray;
+var
+  wResposta: IHTTPResponse;
+begin
+  Result := nil;
+  try
+    wResposta := NetHTTPClient.Get('http://localhost:9001/produtos/');
+
+    if wResposta.StatusCode = 200 then
+      Result := TJSONObject.ParseJSONValue(wResposta.ContentAsString) as TJSONArray
+    else
+      raise Exception.Create('Erro ao buscar produtos: ' + wResposta.StatusText);
+
+  except
+    on E: Exception do
+      raise Exception.Create('Erro ao conectar com o microservico: ' + E.Message);
+  end;
+end;
+
+
+
+end.

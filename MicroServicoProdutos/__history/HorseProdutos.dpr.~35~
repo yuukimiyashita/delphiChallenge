@@ -1,0 +1,25 @@
+program HorseProdutos;
+
+
+{$APPTYPE GUI}    // aqui fica GUI ou CONSOLE pra esconder o cmd que abre
+
+{$R *.res}
+
+uses
+  Horse,
+  Windows,
+  Horse.Jhonson,
+  Controller.Produto in 'Controller\Controller.Produto.pas',
+  Model.Connection in 'Model\Model.Connection.pas',
+  Model.Produtos in 'Model\Model.Produtos.pas';
+
+begin
+  THorse.Use(Jhonson());
+  Controller.Produto.Registry;
+
+  THorse.Listen(9001);  // porta diferente da porta do microservico de nota
+
+  // faz um loop pra ficar ativo
+  while True do
+    Sleep(1000);
+end.

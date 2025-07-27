@@ -1,0 +1,193 @@
+object ufrmCadastroNota: TufrmCadastroNota
+  Left = 0
+  Top = 0
+  Caption = 'Cadastro de nota'
+  ClientHeight = 471
+  ClientWidth = 520
+  Color = clBtnFace
+  Font.Charset = DEFAULT_CHARSET
+  Font.Color = clWindowText
+  Font.Height = -11
+  Font.Name = 'Tahoma'
+  Font.Style = []
+  OldCreateOrder = False
+  OnShow = FormShow
+  PixelsPerInch = 96
+  TextHeight = 13
+  object pCadastro_Pai: TPanel
+    Left = 0
+    Top = 0
+    Width = 520
+    Height = 471
+    Align = alClient
+    TabOrder = 0
+    ExplicitWidth = 531
+    object sbBarraStatus: TStatusBar
+      Left = 1
+      Top = 451
+      Width = 518
+      Height = 19
+      Panels = <>
+      ExplicitWidth = 529
+    end
+    object pToolBar: TPanel
+      Left = 1
+      Top = 1
+      Width = 518
+      Height = 41
+      Align = alTop
+      TabOrder = 1
+      ExplicitWidth = 529
+      object sbOk: TSpeedButton
+        Left = 1
+        Top = 1
+        Width = 72
+        Height = 39
+        Hint = 'Salvar Altera'#231#245'es'
+        Align = alLeft
+        Caption = 'Inserir'
+        Flat = True
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindowText
+        Font.Height = -11
+        Font.Name = 'Tahoma'
+        Font.Style = [fsBold]
+        ParentFont = False
+        OnClick = sbOkClick
+      end
+      object spExcluir: TSpeedButton
+        Left = 73
+        Top = 1
+        Width = 72
+        Height = 39
+        Align = alLeft
+        Caption = 'Excluir'
+        Flat = True
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindowText
+        Font.Height = -11
+        Font.Name = 'Tahoma'
+        Font.Style = [fsBold]
+        ParentFont = False
+        OnClick = spExcluirClick
+      end
+      object sbImprimir: TSpeedButton
+        Left = 445
+        Top = 1
+        Width = 72
+        Height = 39
+        Align = alRight
+        Caption = 'Imprimir'
+        Flat = True
+        Font.Charset = DEFAULT_CHARSET
+        Font.Color = clWindowText
+        Font.Height = -11
+        Font.Name = 'Tahoma'
+        Font.Style = [fsBold]
+        ParentFont = False
+        OnClick = sbImprimirClick
+        ExplicitLeft = 534
+      end
+    end
+    object pCadastro_Filho: TPanel
+      Left = 1
+      Top = 42
+      Width = 518
+      Height = 409
+      Align = alClient
+      TabOrder = 2
+      ExplicitWidth = 529
+      object lbIDNota: TLabel
+        Left = 27
+        Top = 31
+        Width = 109
+        Height = 13
+        Caption = 'Identifica'#231#227'o da nota :'
+      end
+      object Label1: TLabel
+        Left = 52
+        Top = 63
+        Width = 84
+        Height = 13
+        Caption = 'Numero da nota :'
+      end
+      object lbStatus: TLabel
+        Left = 337
+        Top = 31
+        Width = 38
+        Height = 13
+        Caption = 'Status :'
+      end
+      object lbDataEmissaoNota: TLabel
+        Left = 304
+        Top = 63
+        Width = 71
+        Height = 13
+        Caption = 'Data emissao :'
+      end
+      object edIDNota: TEdit
+        Left = 142
+        Top = 28
+        Width = 41
+        Height = 21
+        NumbersOnly = True
+        TabOrder = 0
+        OnExit = edIDNotaExit
+      end
+      object edNumeroNota: TEdit
+        Left = 142
+        Top = 60
+        Width = 123
+        Height = 21
+        MaxLength = 9
+        TabOrder = 1
+      end
+      object edDataEmissaoNota: TEdit
+        Left = 381
+        Top = 60
+        Width = 97
+        Height = 21
+        TabOrder = 2
+      end
+      object cbStatusNota: TComboBox
+        Left = 381
+        Top = 28
+        Width = 97
+        Height = 21
+        ItemIndex = 0
+        TabOrder = 3
+        Text = 'Ativa'
+        Items.Strings = (
+          'Ativa'
+          'Fechada')
+      end
+      object sgProdutos: TStringGrid
+        Left = 27
+        Top = 120
+        Width = 451
+        Height = 217
+        FixedCols = 0
+        Options = [goFixedVertLine, goFixedHorzLine, goVertLine, goHorzLine, goRangeSelect, goColSizing, goEditing, goTabs]
+        TabOrder = 4
+        OnClick = sgProdutosClick
+        OnSelectCell = sgProdutosSelectCell
+        OnSetEditText = sgProdutosSetEditText
+        RowHeights = (
+          24
+          24
+          24
+          24
+          24)
+      end
+      object btAtualizar: TButton
+        Left = 403
+        Top = 343
+        Width = 75
+        Height = 25
+        Caption = 'Atualizar'
+        TabOrder = 5
+        OnClick = btAtualizarClick
+      end
+    end
+  end
+end

@@ -1,0 +1,46 @@
+unit uConsultaBase;
+
+interface
+
+uses
+  Winapi.Windows, Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.ExtCtrls, Data.DB, Vcl.Buttons,
+  Vcl.Grids, Vcl.DBGrids, Vcl.ComCtrls;
+
+type
+  TfrmConsulta = class(TForm)
+    pnToolBar: TPanel;
+    pnConsulta_Pai: TPanel;
+    sbBarraStatus: TStatusBar;
+    pnConsulta_Filho: TPanel;
+    grGrid: TDBGrid;
+    sbProximo: TSpeedButton;
+    sbAnterior: TSpeedButton;
+    procedure grGridKeyDown(Sender: TObject; var Key: Word; Shift: TShiftState);
+  private
+    { Private declarations }
+  public
+    { Public declarations }
+  end;
+
+var
+  frmConsulta: TfrmConsulta;
+
+implementation
+
+{$R *.dfm}
+
+
+
+procedure TfrmConsulta.grGridKeyDown(Sender: TObject; var Key: Word;
+  Shift: TShiftState);
+  var
+   wForm : TufrmConsulta;
+begin
+  if Key = vk_F9 then
+    begin
+      wForm.Show;
+    end;
+end;
+
+end.

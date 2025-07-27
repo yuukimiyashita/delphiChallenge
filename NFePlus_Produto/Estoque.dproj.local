@@ -1,0 +1,17 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<BorlandProject>
+	<Transactions>
+    <Transaction>2025/07/03 16:14:09.000.992,=C:\Users\progweb01\Documents\Embarcadero\Studio\Projects\Unit1.pas</Transaction>
+    <Transaction>2025/07/22 21:14:12.000.795,=C:\Users\progweb01\Documents\Embarcadero\Studio\Projects\Unit1.pas</Transaction>
+    <Transaction>2025/07/22 21:17:33.000.609,C:\Users\progweb01\Pictures\Projeto\NFePlus\uCadastroProduto.dfm=C:\Users\progweb01\Documents\Embarcadero\Studio\Projects\Unit1.dfm</Transaction>
+    <Transaction>2025/07/22 21:17:33.000.609,C:\Users\progweb01\Pictures\Projeto\NFePlus\uCadastroProduto.pas=C:\Users\progweb01\Documents\Embarcadero\Studio\Projects\Unit1.pas</Transaction>
+    <Transaction>2025/07/22 21:17:46.000.244,C:\Users\progweb01\Pictures\Projeto\NFePlus\Estoque.dproj=C:\Users\progweb01\Documents\Embarcadero\Studio\Projects\Project1.dproj</Transaction>
+    <Transaction>2025/07/22 21:18:31.000.509,=C:\Users\progweb01\Pictures\Projeto\NFePlus\Unit1.pas</Transaction>
+    <Transaction>2025/07/22 21:20:26.000.463,C:\Users\progweb01\Pictures\Projeto\NFePlus\dmConexao.pas=C:\Users\progweb01\Pictures\Projeto\NFePlus\Unit1.pas</Transaction>
+    <Transaction>2025/07/22 21:20:26.000.463,C:\Users\progweb01\Pictures\Projeto\NFePlus\dmConexao.dfm=C:\Users\progweb01\Pictures\Projeto\NFePlus\Unit1.dfm</Transaction>
+    <Transaction>2025/07/23 08:34:13.000.805,=C:\Users\progweb01\Pictures\Projeto\NFePlus\Unit1.pas</Transaction>
+    <Transaction>2025/07/23 15:03:30.000.046,=C:\Users\progweb01\Pictures\Projeto\NFePlus_Produto\Unit1.pas</Transaction>
+    <Transaction>2025/07/23 15:03:54.000.361,C:\Users\progweb01\Pictures\Projeto\NFePlus_Produto\Unit1.pas=C:\Users\progweb01\Pictures\Projeto\NFePlus_Produto\uConsultaBase.pas</Transaction>
+    <Transaction>2025/07/23 15:03:54.000.361,C:\Users\progweb01\Pictures\Projeto\NFePlus_Produto\Unit1.dfm=C:\Users\progweb01\Pictures\Projeto\NFePlus_Produto\uConsultaBase.dfm</Transaction>
+  </Transactions>
+</BorlandProject>

@@ -1,0 +1,112 @@
+unit dmConexao;
+
+interface
+
+uses
+  System.SysUtils, System.Classes, System.JSON, System.Net.HttpClient, System.Net.URLClient, System.Net.HttpClientComponent,
+  FireDAC.Stan.Intf, FireDAC.Stan.Option, FireDAC.Stan.Error, FireDAC.UI.Intf,
+  FireDAC.Phys.Intf, FireDAC.Stan.Def, FireDAC.Stan.Pool, FireDAC.Stan.Async,
+  FireDAC.Phys, FireDAC.Phys.FB, FireDAC.Phys.FBDef, FireDAC.VCLUI.Wait,
+  FireDAC.Stan.Param, FireDAC.DatS, FireDAC.DApt.Intf, FireDAC.DApt, Data.DB,
+  Datasnap.DBClient, FireDAC.Comp.DataSet, FireDAC.Comp.Client,
+  FireDAC.Phys.IBBase, FireDAC.Comp.UI;
+
+type
+  TdmDados = class(TDataModule)
+    NetHTTPClient1: TNetHTTPClient;
+  private
+    { Private declarations }
+  public
+    function fBuscaProdutoID(const FProdutoID: String): IHTTPResponse;
+    //function BuscaProdutos: TJSONArray;
+    function fCadastraProdutos(const FProdutoJSON: TJSONObject): Boolean;
+    function fDeletaProdutos(const FProdutoID : String): Boolean;
+  end;
+
+var
+  dmDados: TdmDados;
+
+implementation
+
+{%CLASSGROUP 'Vcl.Controls.TControl'}
+
+{$R *.dfm}
+
+function TdmDados.fBuscaProdutoID(const FProdutoID: String): IHTTPResponse;
+var
+  wResposta: IHTTPResponse;
+begin
+  Result := nil;
+  try
+    wResposta := NetHTTPClient1.Get('http://localhost:9001/produtos/' + FProdutoID);
+    //Vai retornar de qualquer maneira pois usa o status code la na tela para conferir se o produto esta ou nao cadastrado
+    Result := wResposta
+  except
+    on E: Exception do
+      raise Exception.Create('Erro ao conectar com o microservico: ' + E.Message);
+  end;
+end;
+
+
+//function TdmDados.BuscaProdutos: TJSONArray;
+//var
+//  Response: IHTTPResponse;
+//begin
+//  Result := nil;
+//  try
+//    Response := NetHTTPClient1.Get('http://localhost:9001/produtos/');
+//
+//    if Response.StatusCode = 200 then
+//      Result := TJSONObject.ParseJSONValue(Response.ContentAsString) as TJSONArray
+//    else
+//      raise Exception.Create('Erro ao buscar produtos: ' + Response.StatusText);
+//
+//  except
+//    on E: Exception do
+//      raise Exception.Create('Erro ao conectar com o microservico: ' + E.Message);
+//  end;
+//end;
+
+function TdmDados.fCadastraProdutos(const FProdutoJSON: TJSONObject): Boolean;
+var
+  Resposta: IHTTPResponse;
+  JsonStream: TStringStream;
+begin
+
+  JsonStream := TStringStream.Create(ProdutoJSON.ToString, TEncoding.UTF8);
+  try
+    Resposta := NetHTTPClient1.Post(      //Tive erro pois estava mandando como string
+      'http://localhost:9001/produtos/',
+      JsonStream,
+      nil,
+      [TNameValuePair.Create('Content-Type', 'application/json')]
+    );
+
+    if Resposta.StatusCode = 200 then
+      Result := True
+    else
+      Result := False;
+
+    //Result := Resposta.StatusCode in [200, 201];
+  finally
+    JsonStream.Free;
+  end;
+
+end;
+
+
+
+function TdmDados.DeletaProdutos(const ProdutoID: String): Boolean;
+var
+  Resposta : IHTTPResponse;
+begin
+
+  Resposta := dmDados.NetHTTPClient1.Delete('http://localhost:9001/produtos/' + ProdutoID);
+  if Resposta.StatusCode = 200 then
+    Result := True
+  else
+    Result := False;
+end;
+
+
+end.

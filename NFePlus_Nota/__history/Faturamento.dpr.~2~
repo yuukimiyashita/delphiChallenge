@@ -1,0 +1,14 @@
+program Faturamento;
+
+uses
+  Vcl.Forms,
+  uCadastroNota in 'uCadastroNota.pas' {ufrmCadastroNota};
+
+{$R *.res}
+
+begin
+  Application.Initialize;
+  Application.MainFormOnTaskbar := True;
+  Application.CreateForm(TufrmCadastroNota, ufrmCadastroNota);
+  Application.Run;
+end.

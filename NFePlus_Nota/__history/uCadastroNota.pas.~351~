@@ -1,0 +1,358 @@
+unit uCadastroNota;
+
+interface
+
+uses
+  Winapi.Windows, System.Net.HttpClient ,Winapi.Messages, System.SysUtils, System.Variants, System.Classes, Vcl.Graphics,
+  Vcl.Controls, Vcl.Forms, Vcl.Dialogs, Vcl.Buttons, Vcl.ComCtrls, Vcl.ExtCtrls,
+  Vcl.ToolWin, Vcl.StdCtrls, FireDAC.Comp.Client, FireDAC.Stan.Param,
+  Vcl.CheckLst, Vcl.Grids, System.JSON, System.DateUtils;
+
+type
+  TufrmCadastroNota = class(TForm)
+    pCadastro_Pai: TPanel;
+    sbBarraStatus: TStatusBar;
+    pToolBar: TPanel;
+    sbOk: TSpeedButton;
+    spExcluir: TSpeedButton;
+    pCadastro_Filho: TPanel;
+    edIDNota: TEdit;
+    lbIDNota: TLabel;
+    edNumeroNota: TEdit;
+    Label1: TLabel;
+    lbStatus: TLabel;
+    edDataEmissaoNota: TEdit;
+    lbDataEmissaoNota: TLabel;
+    cbStatusNota: TComboBox;
+    sbImprimir: TSpeedButton;
+    sgProdutos: TStringGrid;
+    btAtualizar: TButton;
+    procedure sbOkClick(Sender: TObject);
+    procedure spExcluirClick(Sender: TObject);
+    procedure FormShow(Sender: TObject);
+    procedure edIDNotaExit(Sender: TObject);
+    procedure sbImprimirClick(Sender: TObject);
+    procedure sgProdutosSelectCell(Sender: TObject; ACol, ARow: Integer;
+      var CanSelect: Boolean);
+    procedure sgProdutosSetEditText(Sender: TObject; ACol, ARow: Integer;
+      const Value: string);
+    procedure sgProdutosClick(Sender: TObject);
+    procedure btAtualizarClick(Sender: TObject);
+  private
+    procedure pLimpaCampos;
+    procedure pCarregaProdutos;
+    //procedure pPegarSelecionado;
+  public
+    { Public declarations }
+  end;
+
+var
+  ufrmCadastroNota: TufrmCadastroNota;
+
+implementation
+
+{$R *.dfm}
+
+uses dmConexao, uConsultaBase;
+
+procedure TufrmCadastroNota.sbImprimirClick(Sender: TObject);
+var
+  wNotaID : String;
+  wStatusNota : String;
+begin
+  wStatusNota := cbStatusNota.Text;
+  if wStatusNota = 'Fechada' then
+    begin
+      ShowMessage('Nota ja foi fechada.');
+      Exit;
+    end;
+
+  wNotaID := edIDNota.Text;
+  if wNotaID = '' then
+    begin
+      ShowMessage('Necessario informar o codigo da nota.');
+      Exit;
+    end;
+
+  if dmDados.fImprimirNota(wNotaID) then
+    begin
+      pCarregaProdutos;  //Caso nota seja 'imprimida', vai atualizar os valores e vai atualizar o grid.
+      ShowMessage('Nota foi imprimida.');
+    end
+  else
+    ShowMessage('Erro ao imprimir a nota.');
+end;
+
+procedure TufrmCadastroNota.sbOkClick(Sender: TObject);
+ var
+  wQry : TFDQuery;
+  wI, wId_nota, wId_produto, wQuantidade: Integer;
+  wNotaJSON, wProdutoJSON: TJSONObject;
+  wProdutosArray: TJSONArray;
+  wResposta : IHTTPResponse;
+
+begin
+
+  // verificacao de dados simples
+  if (edIDNota.Text = EmptyStr) or
+     (edNumeroNota.Text = EmptyStr) or
+     (edDataEmissaoNota.Text = EmptyStr) or
+     (cbStatusNota.Text = EmptyStr) then
+    begin
+      ShowMessage('Nenhuma informacao da nota pode ser vazia.');
+      Exit;
+    end;
+
+
+
+  // Confere se a quantidade inserida nao esta vazia
+  for wI := 1 to sgProdutos.RowCount - 1 do
+    begin
+      if sgProdutos.Cells[0, wI] = '[X]' then
+      begin
+        if StrToIntDef(sgProdutos.Cells[4, wI],0) <= 0 then
+          begin
+            ShowMessage('Insira uma quantidade de produto valida.');
+            Exit;
+          end;
+      end;
+    end;
+
+  wNotaJSON := TJSONObject.Create;
+  wProdutosArray := TJSONArray.Create;
+  try
+    wNotaJSON.AddPair('idNota', TJSONNumber.Create(StrToInt(edIDNota.Text)));
+    wNotaJSON.AddPair('numero', TJSONNumber.Create(StrToInt(edNumeroNota.Text)));
+    wNotaJSON.AddPair('status', cbStatusNota.Text);
+    wNotaJSON.AddPair('dataEmissao', edDataEmissaoNota.Text);
+
+    for wI := 1 to sgProdutos.RowCount - 1 do
+    begin
+      if sgProdutos.Cells[0, wI] = '[X]' then
+      begin
+        wProdutoJSON := TJSONObject.Create;
+        wProdutoJSON.AddPair('idProduto', TJSONNumber.Create(StrToInt(sgProdutos.Cells[5, wI])));
+        wProdutoJSON.AddPair('quantidade', TJSONNumber.Create(StrToInt(sgProdutos.Cells[4, wI])));
+        wProdutosArray.AddElement(wProdutoJSON);
+      end;
+    end;
+
+    wNotaJSON.AddPair('produtos', wProdutosArray);
+
+    if dmDados.CadastraNotas(wNotaJSON) then
+      ShowMessage('Nota cadastrada com sucesso.')
+    else
+      ShowMessage('Ocorreu um erro ao salvar a nota.')
+
+  finally
+    FreeAndNil(wNotaJSON);
+  end;
+
+end;
+
+procedure TufrmCadastroNota.sgProdutosClick(Sender: TObject);
+var
+  wCol, wLinha: Integer;
+begin
+  sgProdutos.MouseToCell(Mouse.CursorPos.X - sgProdutos.ClientOrigin.X,
+                         Mouse.CursorPos.Y - sgProdutos.ClientOrigin.Y, wCol, wLinha);
+
+  // verifica se foi clicado no checkbox
+  if (wCol = 0) and (wLinha > 0) then
+  begin
+    if sgProdutos.Cells[0, wLinha] = '[ ]' then
+      sgProdutos.Cells[0, wLinha] := '[X]'
+    else
+      sgProdutos.Cells[0, wLinha] := '[ ]';
+
+    sgProdutos.EditorMode := False;
+  end;
+end;
+
+procedure TufrmCadastroNota.sgProdutosSelectCell(Sender: TObject; ACol,
+  ARow: Integer; var CanSelect: Boolean);
+begin
+
+  // edita apenas na coluna quantidade
+  CanSelect := (ACol = 4) and (ARow > 0);
+
+end;
+
+procedure TufrmCadastroNota.sgProdutosSetEditText(Sender: TObject; ACol,ARow: Integer; const Value: string);
+var
+  wEstoque, wQuantidade: Integer;
+begin
+ if (ACol = 4) and (ARow > 0) then
+  begin
+    try
+      wQuantidade := StrToInt(Value);
+      wEstoque := StrToInt(sgProdutos.Cells[3, ARow]);
+
+      if wQuantidade > wEstoque then
+      begin
+        ShowMessage('Quantidade maior que o estoque');
+        sgProdutos.Cells[4, ARow] := ''; // limpa
+      end;
+    except
+      Exit;
+    end;
+  end;
+end;
+
+procedure TufrmCadastroNota.spExcluirClick(Sender: TObject);
+var
+  wNotaID : String;
+begin
+
+ wNotaID := edIDNota.Text;
+  if wNotaID = '' then
+    begin
+      ShowMessage('Informe o codigo do produto.');
+      Exit;
+    end;
+  if dmDados.fDeletaNota(wNotaID) then
+    ShowMessage('Nota deletado com sucesso.')
+  else
+    ShowMessage('Erro ao deletar nota.');
+
+end;
+
+procedure TufrmCadastroNota.btAtualizarClick(Sender: TObject);
+begin
+  pCarregaProdutos;
+end;
+
+procedure TufrmCadastroNota.edIDNotaExit(Sender: TObject);
+var
+  wQry : TFDQuery;
+  wResposta : IHTTPResponse;
+  wNotaID : String;
+  wNotaJSON : TJSONObject;
+  wDataEmissaoAux : TDateTime;
+  wDataEmissaoStr : String;
+begin
+
+  wNotaID := edIDNota.Text;
+
+  if wNotaID = '' then
+    begin
+      pLimpaCampos;
+      Exit;
+    end;
+
+  if StrToInt(wNotaID) <= 0 then //Nao usei TryStrToInt pois o TEDIT deixa inserir apenas numberos.
+    begin
+     ShowMessage('Insira um codigo valido');
+     pLimpaCampos;
+     Exit;
+    end;
+
+  wResposta := dmDados.BuscaNotaID(wNotaID);
+  if wResposta.StatusCode = 200 then
+    begin
+      wNotaJSON := TJSONObject.ParseJSONValue(wResposta.ContentAsString) as TJSONObject;
+      try
+        edNumeroNota.Text   := IntToStr(wNotaJSON.GetValue<Integer>('numero'));
+        wDataEmissaoAux :=  ISO8601ToDate(wNotaJSON.GetValue<String>('dataEmissao'));
+        edDataEmissaoNota.Text := DateToStr(wDataEmissaoAux);
+        edDataEmissaoNota.Text := FormatDateTime('dd/MM/yyyy',wDataEmissaoAux);
+        cbStatusNota.Text   := wNotaJSON.GetValue<String>('status');
+      finally
+        FreeAndNil(wNotaJSON);
+      end;
+
+    end
+  else
+    pLimpaCampos;
+
+
+end;
+
+
+procedure TufrmCadastroNota.FormShow(Sender: TObject);
+begin
+
+
+
+  sgProdutos.ColCount := 6;
+  sgProdutos.FixedRows := 1;  // cabecalho
+  //sgProdutos.RowCount := 2;  // Cabeçalho + 1 linha (mínimo)
+
+  // nome colunas
+  sgProdutos.Cells[0, 0] := 'Selecionar';
+  sgProdutos.Cells[1, 0] := 'Produto';
+  sgProdutos.Cells[2, 0] := 'Preço';
+  sgProdutos.Cells[3, 0] := 'Estoque';
+  sgProdutos.Cells[4, 0] := 'Quantidade';
+  sgProdutos.Cells[5, 0] := ''; // id oculta
+
+  // largura
+  sgProdutos.ColWidths[0] := 60;
+  sgProdutos.ColWidths[1] := 193;
+  sgProdutos.ColWidths[2] := 60;
+  sgProdutos.ColWidths[3] := 50;
+  sgProdutos.ColWidths[4] := 80;
+  sgProdutos.ColWidths[5] := 0;   // faz a coluna ficar oculta
+
+  pCarregaProdutos;
+
+
+  pLimpaCampos;
+end;
+
+procedure TufrmCadastroNota.pCarregaProdutos;
+var
+  wI : Integer;
+  wProdutosJSONArray: TJSONArray;
+  wProdutoObj: TJSONObject;
+begin
+  try
+      wProdutosJSONArray := dmDados.BuscaProdutos;
+      sgProdutos.RowCount := wProdutosJSONArray.Count + 1;
+      try
+        for wI := 0 to wProdutosJSONArray.Count - 1 do
+          begin
+            wProdutoObj := wProdutosJSONArray.Items[wI] as TJSONObject;
+
+            sgProdutos.Cells[0, wI + 1] := '[ ]'; // checkbox
+            sgProdutos.Cells[1, wI + 1] := wProdutoObj.GetValue<string>('nome');
+            sgProdutos.Cells[2, wI + 1] := FormatFloat('#,##0.00', wProdutoObj.GetValue<Double>('precoUnitario'));
+            sgProdutos.Cells[3, wI + 1] := wProdutoObj.GetValue<Integer>('saldoEstoque').ToString;
+            sgProdutos.Cells[4, wI + 1] := ''; // quantidade
+            sgProdutos.Cells[5, wI + 1] := wProdutoObj.GetValue<Integer>('idProduto').ToString;
+          end;
+      finally
+        FreeAndNil(wProdutosJSONArray);
+      end;
+  except
+    on E: Exception do
+      ShowMessage('Erro ao carregar produtos: ' + E.Message);
+  end;
+
+end;
+
+procedure TufrmCadastroNota.pLimpaCampos;
+begin
+  //edIDNota.Text := '';
+  edNumeroNota.Text := '';
+  cbStatusNota.ItemIndex := 0;
+  edDataEmissaoNota.Text := '';
+  //edIDNota.SetFocus;
+end;
+
+
+//procedure TufrmCadastroNota.pPegarSelecionado;
+//var
+//  i : Integer;
+//begin
+//  for i := 1 to sgProdutos.RowCount - 1 do
+//  begin
+//    if sgProdutos.Cells[0, i] = '[X]' then
+//    begin
+//      ShowMessage('Produto selecionado: ' + sgProdutos.Cells[1, i]);
+//      // Aqui você pode salvar na tabela NOTAPRODUTO, por exemplo
+//    end;
+//  end;
+//end;
+
+end.

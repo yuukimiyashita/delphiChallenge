@@ -1,0 +1,171 @@
+object frCadProdutos: TfrCadProdutos
+  Left = 0
+  Top = 0
+  Caption = 'Cadastro de produtos'
+  ClientHeight = 221
+  ClientWidth = 647
+  Color = clBtnFace
+  Font.Charset = DEFAULT_CHARSET
+  Font.Color = clWindowText
+  Font.Height = -11
+  Font.Name = 'Tahoma'
+  Font.Style = []
+  OldCreateOrder = False
+  OnShow = FormShow
+  PixelsPerInch = 96
+  TextHeight = 13
+  object pToolBar: TPanel
+    Left = 0
+    Top = 0
+    Width = 647
+    Height = 41
+    Align = alTop
+    TabOrder = 0
+    object sbOk: TSpeedButton
+      Left = 1
+      Top = 1
+      Width = 72
+      Height = 39
+      Hint = 'Salvar Altera'#231#245'es'
+      Align = alLeft
+      Caption = 'Inserir'
+      Flat = True
+      Font.Charset = DEFAULT_CHARSET
+      Font.Color = clWindowText
+      Font.Height = -11
+      Font.Name = 'Tahoma'
+      Font.Style = [fsBold]
+      NumGlyphs = 4
+      ParentFont = False
+      ParentShowHint = False
+      ShowHint = True
+      OnClick = sbOkClick
+    end
+    object sbExclui: TSpeedButton
+      Left = 73
+      Top = 1
+      Width = 79
+      Height = 39
+      Align = alLeft
+      Caption = 'Excluir'
+      Flat = True
+      Font.Charset = DEFAULT_CHARSET
+      Font.Color = clWindowText
+      Font.Height = -11
+      Font.Name = 'Tahoma'
+      Font.Style = [fsBold]
+      ParentFont = False
+      OnClick = sbExcluiClick
+      ExplicitLeft = 42
+    end
+  end
+  object pnCadastro_Pai: TPanel
+    Left = 0
+    Top = 41
+    Width = 647
+    Height = 180
+    Align = alClient
+    TabOrder = 1
+    ExplicitHeight = 212
+    object sbBarraStatus: TStatusBar
+      Left = 1
+      Top = 160
+      Width = 645
+      Height = 19
+      Panels = <>
+      ExplicitTop = 192
+    end
+    object pnCadastro_Filho: TPanel
+      Left = 1
+      Top = 0
+      Width = 665
+      Height = 161
+      TabOrder = 1
+      object lbCodigo: TLabel
+        Left = 26
+        Top = 32
+        Width = 40
+        Height = 13
+        Caption = 'Codigo :'
+      end
+      object lbDescricao: TLabel
+        Left = 13
+        Top = 64
+        Width = 53
+        Height = 13
+        Caption = 'Descri'#231#227'o :'
+      end
+      object lbPreco: TLabel
+        Left = 32
+        Top = 91
+        Width = 34
+        Height = 13
+        Caption = 'Pre'#231'o :'
+      end
+      object lbSaldo: TLabel
+        Left = 210
+        Top = 91
+        Width = 33
+        Height = 13
+        Caption = 'Saldo :'
+      end
+      object lbCategoria: TLabel
+        Left = 416
+        Top = 91
+        Width = 54
+        Height = 13
+        Caption = 'Categoria :'
+      end
+      object edCodigoProduto: TEdit
+        Left = 72
+        Top = 29
+        Width = 41
+        Height = 21
+        NumbersOnly = True
+        TabOrder = 0
+        OnExit = edCodigoProdutoExit
+        OnKeyDown = edCodigoProdutoKeyDown
+      end
+      object edNomeProduto: TEdit
+        Left = 119
+        Top = 29
+        Width = 465
+        Height = 21
+        TabOrder = 1
+      end
+      object edDescricaoProduto: TEdit
+        Left = 72
+        Top = 61
+        Width = 512
+        Height = 21
+        TabOrder = 2
+      end
+      object edPrecoProduto: TEdit
+        Left = 72
+        Top = 88
+        Width = 85
+        Height = 21
+        TabOrder = 3
+        OnKeyDown = edPrecoProdutoKeyDown
+      end
+      object edSaldoProduto: TEdit
+        Left = 249
+        Top = 88
+        Width = 121
+        Height = 21
+        TabOrder = 4
+      end
+      object cbCategoriaProduto: TComboBox
+        Left = 476
+        Top = 88
+        Width = 108
+        Height = 21
+        ItemIndex = 0
+        TabOrder = 5
+        Text = 'Desconhecido'
+        Items.Strings = (
+          'Desconhecido')
+      end
+    end
+  end
+end

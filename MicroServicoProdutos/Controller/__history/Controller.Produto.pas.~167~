@@ -1,0 +1,187 @@
+unit Controller.Produto;
+
+interface
+
+uses Horse, System.Json, Horse.Jhonson, System.SysUtils, Model.Produtos,
+     FireDAC.Comp.Client, Data.DB, DataSet.Serialize;
+
+procedure Registry;
+
+implementation
+
+procedure pRetornaProduto(Req: THorseRequest; Res: THorseResponse);
+var
+  wProdutos : TProdutos;
+  wQry : TFDQuery;
+  wErro : String;
+  wArrayProdutos : TJSONArray;
+begin
+  try
+    wProdutos := TProdutos.Create;
+  except
+    on E: Exception do
+        begin
+          Res.Status(500).Send('Erro ao conectar com o banco: ' + E.Message);
+           Exit;
+        end;
+
+  end;
+
+  try
+    wQry := wProdutos.fRetornaProduto(wErro);
+
+    wArrayProdutos := wQry.ToJSONArray();
+
+    Res.Send<TJSONArray>(wArrayProdutos);
+
+  finally
+    FreeAndNil(wQry);
+    FreeAndNil(wProdutos);
+  end;
+
+end;
+
+procedure pRetornaProdutoID(Req: THorseRequest; Res: THorseResponse);
+var
+  wProduto : TProdutos;
+  wObjProduto : TJSONObject;  //Object porque retorna 1 cliente
+  wQry : TFDQuery;
+  wErro : String;
+begin
+  try
+    wProduto := TProdutos.Create;
+    wProduto.ID_PRODUTO := Req.Params['id'].ToInteger;
+  except
+    on E: Exception do
+        begin
+          Res.Status(500).Send('Erro ao conectar com o banco: ' + E.Message);
+          Exit;
+        end;
+  end;
+
+  try
+    wQry := wProduto.fRetornaProduto(wErro);
+
+    if wQry.RecordCount > 0 then
+      begin
+        wObjProduto := wQry.ToJSONObject;
+        Res.Send<TJSONObject>(wObjProduto); //como eh um cliente apenas, devolve um objeto
+      end
+    else
+      Res.Send('Produto nao cadastrado.').Status(404);
+  finally
+    FreeAndNil(wQry);
+    FreeAndNil(wProduto);
+  end;
+
+end;
+
+procedure pCadastraProduto(Req: THorseRequest; Res: THorseResponse);
+var
+  wProduto : TProdutos;
+  wObjProduto : TJSONObject;
+  wErro : String;
+  wBody : TJsonValue;
+begin
+  try
+    wProduto := TProdutos.Create;
+  except
+    on E: Exception do
+        begin
+          Res.Status(500).Send('Erro ao conectar com o banco: ' + E.Message);
+          Exit;
+        end;
+  end;
+
+  try
+    try
+      //Recebe um json de quem execute o post
+      wBody := TJSONObject.ParseJSONValue(TEncoding.UTF8.GetBytes(Req.Body),0) as TJsonValue;
+
+      wProduto.ID_PRODUTO := wBody.GetValue<Integer>('idProduto',0);
+      wProduto.SALDO_ESTOQUE := wBody.GetValue<Integer>('saldoEstoque',0);
+      wProduto.DESCRICAO := wBody.GetValue<String>('descricao','');
+      wProduto.CATEGORIA := wBody.GetValue<String>('categoria','');
+      wProduto.NOME := wBody.GetValue<String>('nome','');
+      wProduto.PRECO_UNITARIO := wBody.GetValue<Double>('precoUnitario', 0.0);
+      wProduto.fCadastraProduto(wErro);
+
+      FreeAndNil(wBody);
+
+      if wErro <> '' then
+        raise Exception.Create(wErro);
+
+    except on ex:exception do
+      begin
+        Res.Send(ex.Message).Status(400);
+        Exit;
+      end;
+    end;
+
+//
+//    objProduto := TJSONObject.Create;
+//    objProduto.AddPair('ID_PRODUTO', Produto.ID_PRODUTO.ToString);
+//
+//    res.Send<TJSONObject>(objProduto).Status(201);
+
+
+  finally
+    FreeAndNil(wProduto);
+  end;
+
+end;
+
+procedure pDeletaProduto(Req: THorseRequest; Res: THorseResponse);
+var
+  wProduto : TProdutos;
+  wObjProduto: TJSONObject;
+  wErro  : String;
+begin
+  try
+    wProduto := TProdutos.Create;
+    wProduto.ID_PRODUTO := Req.Params['id'].ToInteger;
+  except
+    on E: Exception do
+        begin
+          Res.Status(500).Send('Erro ao conectar com o banco: ' + E.Message);
+          Exit;
+        end;
+  end;
+
+  try
+
+    try
+      if not wProduto.DeletaProduto(wErro) then
+        raise Exception.Create(wErro)
+
+    except on Ex:Exception do
+      begin
+        Res.Send(Ex.Message).Status(400);
+        Exit;
+      end;
+
+    end;
+  finally
+    FreeAndNil(wProduto);
+  end;
+
+end;
+
+procedure Registry;
+begin
+
+
+  THorse.Get('/produtos', pRetornaProduto);
+
+  THorse.Get('/produtos/:id', pRetornaProdutoID);
+
+  THorse.Post('/produtos', pCadastraProduto);
+
+  THorse.Delete('/produtos/:id', pDeletaProduto);
+
+
+
+
+end;
+
+end.
